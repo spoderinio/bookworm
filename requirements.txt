@@ -1,0 +1,9 @@
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+aiosqlite==0.20.0
+jinja2==3.1.4
+python-multipart==0.0.9
+pdfminer.six==20231228
+ebooklib==0.18
+beautifulsoup4==4.12.3
+lxml==5.2.1

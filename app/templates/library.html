@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bookworm — Библиотека</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:opsz,wght@8..60,300;8..60,400;8..60,600&display=swap');
+
+  :root {
+    --bg: #f5f0e8;
+    --bg2: #ede7d9;
+    --surface: #fff9f0;
+    --border: #d4c9b0;
+    --text: #2c2416;
+    --text2: #6b5d45;
+    --accent: #8b4513;
+    --accent2: #a0522d;
+    --shadow: rgba(44,36,22,0.12);
+    --radius: 4px;
+  }
+  [data-theme="dark"] {
+    --bg: #1a1510;
+    --bg2: #221d14;
+    --surface: #2a2218;
+    --border: #3d3425;
+    --text: #e8dcc8;
+    --text2: #a89070;
+    --accent: #c4783a;
+    --accent2: #d4884a;
+    --shadow: rgba(0,0,0,0.4);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Source Serif 4', Georgia, serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--surface);
+    border-bottom: 2px solid var(--border);
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    box-shadow: 0 2px 8px var(--shadow);
+  }
+  .logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    text-decoration: none;
+  }
+  .logo span { font-style: italic; }
+
+  .header-actions {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+  }
+
+  .btn {
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.85rem;
+    padding: 0.5rem 1rem;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-decoration: none;
+  }
+  .btn:hover { background: var(--bg2); border-color: var(--accent); color: var(--accent); }
+  .btn-primary {
+    background: var(--accent);
+    color: #fff9f0;
+    border-color: var(--accent);
+  }
+  .btn-primary:hover { background: var(--accent2); border-color: var(--accent2); color: #fff; }
+
+  .theme-btn {
+    font-size: 1.1rem;
+    padding: 0.4rem 0.6rem;
+    border: 1.5px solid var(--border);
+    background: transparent;
+    border-radius: var(--radius);
+    cursor: pointer;
+  }
+
+  main { max-width: 900px; margin: 0 auto; padding: 1.5rem; }
+
+  /* Upload modal */
+  .modal-bg {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-bg.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    padding: 1.5rem;
+    width: min(420px, 94vw);
+    box-shadow: 0 8px 32px var(--shadow);
+  }
+  .modal h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+    color: var(--accent);
+  }
+  .form-group { margin-bottom: 0.9rem; }
+  .form-group label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text2);
+    margin-bottom: 0.3rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .form-group input, .form-group select {
+    width: 100%;
+    padding: 0.55rem 0.75rem;
+    border: 1.5px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    border-radius: var(--radius);
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.95rem;
+  }
+  .form-group input:focus, .form-group select:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .modal-actions { display: flex; gap: 0.6rem; justify-content: flex-end; margin-top: 1.2rem; }
+
+  /* Drop zone */
+  .drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    text-align: center;
+    color: var(--text2);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-bottom: 0.9rem;
+  }
+  .drop-zone.drag-over { border-color: var(--accent); background: var(--bg2); }
+  .drop-zone .icon { font-size: 2rem; display: block; margin-bottom: 0.4rem; }
+  #file-input { display: none; }
+  .file-chosen { font-size: 0.82rem; color: var(--accent); margin-top: 0.3rem; }
+
+  /* Book grid */
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 1rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .books-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1.2rem;
+    margin-bottom: 2rem;
+  }
+
+  .book-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 2px 2px 0 var(--border);
+  }
+  .book-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 3px 5px 0 var(--border);
+  }
+
+  .book-cover {
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    position: relative;
+  }
+  .book-cover::after {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 6px;
+    background: rgba(0,0,0,0.2);
+  }
+
+  .book-info {
+    padding: 0.6rem 0.7rem 0.7rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+  .book-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.88rem;
+    font-weight: 700;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .book-author {
+    font-size: 0.75rem;
+    color: var(--text2);
+    font-style: italic;
+  }
+  .book-format {
+    font-size: 0.68rem;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: auto;
+    padding-top: 0.3rem;
+  }
+
+  .progress-bar-wrap {
+    height: 3px;
+    background: var(--bg2);
+    margin: 0;
+  }
+  .progress-bar {
+    height: 100%;
+    background: var(--accent);
+    transition: width 0.3s;
+  }
+
+  /* Context menu for delete */
+  .book-card-wrap { position: relative; }
+  .delete-btn {
+    position: absolute;
+    top: 4px; right: 4px;
+    background: rgba(0,0,0,0.5);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 22px; height: 22px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 5;
+  }
+  .book-card-wrap:hover .delete-btn { display: flex; }
+
+  /* Empty state */
+  .empty {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text2);
+  }
+  .empty .big { font-size: 3rem; margin-bottom: 0.5rem; }
+  .empty p { font-style: italic; }
+
+  .loading-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 1rem;
+    color: #fff;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem;
+  }
+  .loading-overlay.show { display: flex; }
+  .spinner {
+    width: 40px; height: 40px;
+    border: 3px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 500px) {
+    .books-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 0.8rem; }
+    header { padding: 0.8rem 1rem; }
+    .logo { font-size: 1.3rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loading">
+  <div class="spinner"></div>
+  <span>Обработване на книгата...</span>
+</div>
+
+<header>
+  <a class="logo" href="/">🐛 <span>Bookworm</span></a>
+  <div class="header-actions">
+    <button class="theme-btn" onclick="toggleTheme()" title="Смени тема">🌙</button>
+    <button class="btn btn-primary" onclick="openUpload()">+ Добави книга</button>
+  </div>
+</header>
+
+<main>
+  {% if books %}
+  <p class="section-title">Библиотека ({{ books|length }} книги)</p>
+  <div class="books-grid">
+    {% for book in books %}
+    <div class="book-card-wrap">
+      <a class="book-card" href="/read/{{ book.id }}">
+        <div class="progress-bar-wrap">
+          <div class="progress-bar" style="width: {{ book.progress_pct or 0 }}%"></div>
+        </div>
+        <div class="book-cover" style="background: {{ book.cover_color }};">
+          📖
+        </div>
+        <div class="book-info">
+          <div class="book-title">{{ book.title }}</div>
+          {% if book.author %}
+          <div class="book-author">{{ book.author }}</div>
+          {% endif %}
+          <div class="book-format">
+            {{ book.format|upper }}
+            {% if book.progress_pct %}· {{ book.progress_pct|int }}%{% endif %}
+          </div>
+        </div>
+      </a>
+      <button class="delete-btn" onclick="deleteBook(event, {{ book.id }}, '{{ book.title }}')" title="Изтрий">✕</button>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty">
+    <div class="big">📚</div>
+    <p>Библиотеката е празна.<br>Добави своята първа книга!</p>
+  </div>
+  {% endif %}
+</main>
+
+<!-- Upload Modal -->
+<div class="modal-bg" id="modal-bg" onclick="closeUpload(event)">
+  <div class="modal">
+    <h2>📖 Добави книга</h2>
+    <form id="upload-form" action="/upload" method="post" enctype="multipart/form-data">
+      <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+        <span class="icon">📂</span>
+        Плъзни PDF или EPUB тук<br>или натисни за избор
+        <div class="file-chosen" id="file-chosen"></div>
+      </div>
+      <input type="file" id="file-input" name="file" accept=".pdf,.epub" required>
+
+      <div class="form-group">
+        <label>Заглавие (незадължително)</label>
+        <input type="text" name="title" placeholder="Ще се взема от файла ако е празно">
+      </div>
+      <div class="form-group">
+        <label>Автор (незадължително)</label>
+        <input type="text" name="author" placeholder="—">
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn" onclick="closeUpload()">Отказ</button>
+        <button type="submit" class="btn btn-primary">Качи</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+// Theme
+const saved = localStorage.getItem('bw-theme') || 'light';
+if (saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+
+function toggleTheme() {
+  const d = document.documentElement;
+  const curr = d.getAttribute('data-theme');
+  const next = curr === 'dark' ? 'light' : 'dark';
+  d.setAttribute('data-theme', next);
+  localStorage.setItem('bw-theme', next);
+}
+
+// Upload modal
+function openUpload() { document.getElementById('modal-bg').classList.add('open'); }
+function closeUpload(e) {
+  if (!e || e.target === document.getElementById('modal-bg'))
+    document.getElementById('modal-bg').classList.remove('open');
+}
+
+// File input
+const fileInput = document.getElementById('file-input');
+const fileChosen = document.getElementById('file-chosen');
+const dropZone = document.getElementById('drop-zone');
+
+fileInput.addEventListener('change', () => {
+  if (fileInput.files[0]) fileChosen.textContent = fileInput.files[0].name;
+});
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (f) { fileInput.files = e.dataTransfer.files; fileChosen.textContent = f.name; }
+});
+
+// Upload with loading
+document.getElementById('upload-form').addEventListener('submit', () => {
+  document.getElementById('loading').classList.add('show');
+});
+
+// Delete
+async function deleteBook(e, id, title) {
+  e.preventDefault();
+  e.stopPropagation();
+  if (!confirm(`Изтриване на „${title}"?`)) return;
+  const form = document.createElement('form');
+  form.method = 'post';
+  form.action = `/delete/${id}`;
+  document.body.appendChild(form);
+  form.submit();
+}
+</script>
+</body>
+</html>
